@@ -1,113 +1,100 @@
-import React from "react";
+import React, { useState } from "react";
+import WeatherInfo from "./WeatherInfo";
+import WeatherForecast from "./WeatherForecast";
+import "./Weather.css";
 import axios from "axios";
 
-export default function refreshWeather(response) {
-  let temperatureElement = document.querySelector("#temperature");
-  let temperature = response.data.temperature.current;
-  let cityElement = document.querySelector("#city");
-  let descriptionElement = document.querySelector("#description");
-  let humidityElement = document.querySelector("#humidity");
-  let windElement = document.querySelector("#wind");
-  let timeElement = document.querySelector("#time");
-  console.log(timeElement);
-  let date = new Date(response.data.time * 1000);
-  let iconElement = document.querySelector("#icon");
+export default function Weather(props) {
+  const [weatherData, setWeatherData] = useState({ ready: false });
+  const [city, setCity] = useState(props.defaultCity);
 
-  iconElement.innerHTML = `<img src="${response.data.condition.icon_url}" class="weather-app-icon">`;
-  cityElement.innerHTML = response.data.city;
-
-  timeElement.innerHTML = formatDate(date);
-  descriptionElement.innerHTML = response.data.condition.description;
-  humidityElement.innerHTML = `${response.data.temperature.humidity}%`;
-  windElement.innerHTML = `${response.data.wind.speed}km/h`;
-
-  temperatureElement.innerHTML = Math.round(temperature);
-  getForecast(response.data.city);
-}
-
-function formatDate(date) {
-  let minutes = date.getMinutes();
-  let hours = date.getHours();
-  let days = [
-    "Sunday",
-    "Monday",
-    "Tuesday",
-    "Wednesday",
-    "Thursday",
-    "Friday",
-    "Saturday",
-  ];
-  let day = days[date.getDay()];
-  if (minutes < 10) {
-    minutes = `0${minutes}`;
-  }
-  if (hours < 10) {
-    hours = `0${hours}`;
+  function handleResponse(response) {
+    setWeatherData({
+      ready: true,
+      coordinates: response.data.coordinates,
+      temperature: response.data.temperature.current,
+      humidity: response.data.temperature.humidity,
+      date: new Date(response.data.time * 1000),
+      description: response.data.condition.description,
+      icon: response.data.condition.icon,
+      wind: response.data.wind.speed,
+      city: response.data.city,
+    });
   }
 
-  return `${day} ${hours}:${minutes}`;
-}
-function searchCity(city) {
-  let apiKey = "80428f51a21b4t3dfe9d3b547of6cb3f";
-  let apiUrl = `https://api.shecodes.io/weather/v1/current?query=${city}&key=${apiKey}&units=metric`;
-  axios.get(apiUrl).then(refreshWeather);
-}
+  function handleSubmit(event) {
+    event.preventDefault();
+    search();
+  }
 
-function handleSearchSubmit(event) {
-  event.preventDefault();
-  let searchInput = document.querySelector("#search-form-input");
+  function handleCityChange(event) {
+    setCity(event.target.value);
+  }
 
-  searchCity(searchInput.value);
-}
-function formatday(timestamp) {
-  let date = new Date(timestamp * 1000);
-  let days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-  return days[date.getDay()];
-}
-function getForecast(city) {
-  let apiKey = "80428f51a21b4t3dfe9d3b547of6cb3f";
-  let apiUrl = `https://api.shecodes.io/weather/v1/forecast?query=${city}&key=${apiKey}&units=metric`;
-  axios.get(apiUrl).then(displayforecast);
+  function search() {
+    const apiKey = "eac360db5fc86ft86450f3693e73o43f";
+    let apiUrl = `https://api.shecodes.io/weather/v1/current?query=${city}&key=${apiKey}&units=metric`;
 
-  console.log(apiUrl);
-}
-function displayforecast(response) {
-  console.log(response.data);
+    axios.get(apiUrl).then(handleResponse);
+  }
 
-  let forecastHtml = "";
-
-  response.data.daily.forEach(function (day, index) {
-    if (index < 5) {
-      forecastHtml =
-        forecastHtml +
-        `
-  <div class="row">
-    <div class="col-2">
-      <div class="weather-forecast-date">${formatday(day.time)}</div>
-
-      <img
-        src="${day.condition.icon_url}"
-        alt="weather-icon"
-        width="42"
-      />
-      <div class="weather-forecast-temperatures">
-        <strong class="weather-forecast-temperature-max">${Math.round(
-          day.temperature.maximum
-        )}°  </strong>
-        <span class="weather-forecast-temperature-min">  ${Math.round(
-          day.temperature.minimum
-        )}°</span>
+  if (weatherData.ready) {
+    return (
+      <div className="Weather">
+        <form onSubmit={handleSubmit}>
+          <div className="row">
+            <div className="col-9 ">
+              <input
+                type="search"
+                placeholder="Enter a city.."
+                className="form-control search-input"
+                onChange={handleCityChange}
+              />
+            </div>
+            <div className="col-3 p-0">
+              <input
+                type="submit"
+                value="Search"
+                className="btn btn-primary w-100"
+              />
+            </div>
+          </div>
+        </form>
+        <WeatherInfo data={weatherData} />
+        <WeatherForecast
+          coordinates={weatherData.coordinates}
+          city={weatherData.city}
+        />
+        <footer>
+          coded by
+          <a
+            href="https://github.com/Moredebbs"
+            target="_blank"
+            rel="noreferrer"
+          >
+            Moyinoluwa Owoeye
+          </a>
+          is
+          <a
+            href="https://github.com/Moredebbs/mi-clima"
+            target="_blank"
+            rel="noreferrer"
+          >
+            open-sourced on Github
+          </a>
+          and
+          <a
+            href="https://app.netlify.com/sites/mi-clima-app/deploys/65fb4458c9fa881c2318b7fe"
+            target="_blank"
+            rel="noreferrer"
+          >
+            hosted on Netlify
+          </a>
+        </footer>
       </div>
-    </div>
-    </div>
-`;
-    }
-  });
-  let forecastElement = document.querySelector("#forecast");
-  forecastElement.innerHTML = forecastHtml;
+    );
+  } else {
+    search();
+    return "Loading...";
+  }
 }
-
-let searchFormElement = document.querySelector("#search-form");
-console.log(searchFormElement);
-searchFormElement.addEventListener("submit", handleSearchSubmit);
-searchCity("London");
