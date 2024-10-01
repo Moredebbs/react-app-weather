@@ -1,5 +1,5 @@
 import "./App.css";
-
+import Weather from "./Weather";
 function App() {
   return (
     <div className="App">
@@ -74,7 +74,7 @@ function App() {
               hosted on Netlify
             </a>
           </footer>
-          <script src="src/index.js"></script>
+          <Weather />
         </div>
       </body>
     </div>
